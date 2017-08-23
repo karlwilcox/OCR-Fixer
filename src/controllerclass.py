@@ -46,7 +46,6 @@ class controllerClass:
         cond = ''
         act = ''
         arg = ''
-        inQuotes = False
 
         state = 'start'
         prev = ''
@@ -62,12 +61,6 @@ class controllerClass:
             # Not else
             if ch == '#':
                 break
-            if ch == '"':
-                if inQuotes:
-                    inQuotes = False
-                else:
-                    inQuotes = True
-                continue
             if ch == '\\':
                 if (nextCh == '"' or nextCh == '#' or
                    nextCh == '%' or nextCh == '_'):
@@ -75,7 +68,7 @@ class controllerClass:
                     i += 1
             # Not else
             if state == 'start':
-                if not(inQuotes) and ch.isspace():
+                if ch.isspace():
                     continue
                 if ch == '/':
                     state = 'regex'
@@ -83,7 +76,7 @@ class controllerClass:
                     state = 'cond'
                 cond += ch
             elif state == 'cond':
-                if not(inQuotes) and ch.isspace():
+                if ch.isspace():
                     state = 'action'
                 else:
                     cond += ch
@@ -92,13 +85,13 @@ class controllerClass:
                     state = 'spaces1'  # might be followed by spaces
                 cond += ch
             elif state == 'spaces1':
-                if not(inQuotes) and ch.isspace():
+                if ch.isspace():
                     continue  # ignore initial whitespace
                 else:
                     act = ch
                     state = 'action'
             elif state == 'action':
-                if not(inQuotes) and ch.isspace():
+                if ch.isspace():
                     state = 'arg'
                 else:
                     act += ch

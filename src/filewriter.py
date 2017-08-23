@@ -34,10 +34,11 @@ class fileWriterClass:
             return True
         return False
 
-    def getNumber(self, controlLine):
-        if controlLine[0].isdigit():
-            number = controlLine[0]
-            controlLine = controlLine[1:].strip()
-        else:
-            number = '1'
-        return (number, controlLine)
+    def getNumber(self, wordList):
+        try:
+            number = int(wordList[0])
+            data = ' '.join(wordList[1:])
+        except ValueError:
+            number = 1
+            data = ' '.join(wordList)
+        return (number, data)

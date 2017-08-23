@@ -57,12 +57,24 @@ $ echo TEST013 counter in use
 
 [section 8]
 ^ restart
-^ call setParaStart <p class=\"test\">
-^ open 1 para-test.txt
-* process paragraph 1
-$ complete paragraph 1
+^ process 1 echo wibble
+^ process 2 double
+^ stream a 2 1
+^ stream b 2
+3 filter b _dataline_
+* sendto a _dataline_
+
 
 [section99]
 ^ echo TEST999 final section and quit
 * quit
 
+# ^ process 1 para blank multi
+# & process 2 paraTags <p> </p>
+# & process 3 write output.txt
+# & stream a 1 2 3
+# & process 4 heading single
+# & process 5 headingTags <h2> </h2>
+# & stream b 4 5 3
+# * pushTo a
+# * pushTo b

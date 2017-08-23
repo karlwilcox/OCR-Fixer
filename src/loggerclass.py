@@ -7,6 +7,7 @@ class loggerClass():
     condition = 4
     action = 8
     variable = 16
+    stream = 32
     showLevel = 0
 
     def __init__(self, outputFile=None):

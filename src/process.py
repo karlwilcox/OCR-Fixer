@@ -61,7 +61,14 @@ class pipelineStoreClass():
     def addPipeline(self, pipelineLetter, processNumbers):
         self.logger.log('storing processes %s in stream %s' % (processNumbers, pipelineLetter),
                         self.logger.stream)
-        self.pipelineMap[pipelineLetter] = processNumbers
+        procNums = []
+        try:
+            for n in processNumbers:
+                num = int(n)
+                procNums.append(num)
+            self.pipelineMap[pipelineLetter] = procNums
+        except ValueError:
+            self.errorNotifier.doError('Expected process numbers')
 
     def runPipeline(self, pipelineLetter, content):
         self.logger.log('sending content %s to stream %s' % (content, pipelineLetter),
