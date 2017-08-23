@@ -72,8 +72,9 @@ class actionClass():
             ch = arg[i]
             if ch == '\\':
                 if i + 1 < len(arg) and arg[i + 1] == '"':
+                    print ('escaping quote')
                     word += '"'
-                    i += 2
+                    i += 1
                 else:
                     word += ch
             elif ch == '"':
@@ -85,9 +86,12 @@ class actionClass():
                 else:
                     inQuotes = True
             elif ch.isspace():
-                if word != '':
-                    words.append(word)
-                    word = ''
+                if inQuotes:
+                    word += ch
+                else:
+                    if word != '':
+                        words.append(word)
+                        word = ''
             else:
                 word += ch
             i += 1
@@ -96,12 +100,18 @@ class actionClass():
         return tuple(words)
 
     def doAction(self, line, action, argument):
-        self.result = True  # Most actions always succeed,
-        retval = line                     # so set this to default
-        argument = re.sub('%([a-zA-z0-9-]+?)%', self.subVar, argument)
+        self.result = True  # Most actions always succeed, so set as default
+        retval = line
+        # substitute variable, unless % characters are preceeded by backslash
+        argument = re.sub('(?<!\\\\)%([a-zA-z0-9-]+?)(?<!\\\\)%', self.subVar, argument)
         self.dataLine = line
-        argument = re.sub('_dataline_', self.subDataline, argument)
-        argument = re.sub('_([a-zA-z0-9-]+?)_', self.subBuiltin, argument)
+        # substitute current data, unless _ characters are preceeded by backslash
+        argument = re.sub('(?<!\\\\)_dataline_(?<!\\\\)', self.subDataline, argument)
+        # substitute built-ins, unless _ characters are preceeded by backslash
+        argument = re.sub('(?<!\\\\)_([a-zA-z0-9-]+?)(?<!\\\\)_', self.subBuiltin, argument)
+        # Now remove any backslashes that were escaping the above
+        argument = re.sub('\\\\(?=[%_])', '', argument)
+        # finally, split the argument into words, respecting quote marks (and more escapes!)
         words = self.argToWords(argument)
         if action == 'goto':
             if self.sourceHandler.gotoLine(words[0]):

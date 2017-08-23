@@ -63,6 +63,7 @@ $ echo TEST013 counter in use
 ^ stream b 2
 3 filter b _dataline_
 * sendto a _dataline_
+$ echo "     helloooo    " \"word\" "quote mark - \" here"
 
 
 [section99]

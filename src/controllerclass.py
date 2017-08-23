@@ -62,8 +62,7 @@ class controllerClass:
             if ch == '#':
                 break
             if ch == '\\':
-                if (nextCh == '"' or nextCh == '#' or
-                   nextCh == '%' or nextCh == '_'):
+                if nextCh == '#':
                     ch = nextCh
                     i += 1
             # Not else
