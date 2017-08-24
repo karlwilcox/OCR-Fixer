@@ -44,8 +44,8 @@ def readBook(controlFileName, dataFileName):
                     if action == 'next':
                         newPass = controller.nextPass()
                         break
-                    elif action == 'section':
-                        newPass = controller.namedPass(argument)
+                    elif action == 'section':  # TODO this argument hasn't been variable
+                        newPass = controller.namedPass(argument)          # substituted
                     elif action == 'quit' or action == 'exit':
                         exitNow = True  # Force exit from outer loop
                         break
@@ -72,4 +72,5 @@ if len(sys.argv) > 3:
     logger = loggerClass(sys.argv[3])
 else:
     logger = loggerClass()
+    logger.showLevel = 40
 readBook(sys.argv[1], sys.argv[2])

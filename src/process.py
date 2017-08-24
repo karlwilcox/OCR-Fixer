@@ -23,6 +23,29 @@ class doubleProcessClass(processSuperClass):
         return content + content
 
 
+class outputProcessClass(processSuperClass):
+    """Demonstration class for processing"""
+    def __init__(self, args):
+        super(outputProcessClass, self).__init__()
+        self.fileHandle = None
+        if len(args):
+            try:
+                self.fileHandle = open(args[0], "w")
+            except IOError:
+                self.errorNotifier.doError('Could not open ' + args[0])
+
+    def doAction(self, content):
+        if self.fileHandle is not None:
+            self.fileHandle.write(content)
+        return content
+
+    def flush(self, content):
+        if self.fileHandle is not None:
+            if content is not None:
+                self.fileHandle.write(content)
+            self.fileHandle.close()
+
+
 class processStoreClass():
     """docstring for processStore"""
     def __init__(self, logger, errorNotifier):
@@ -32,12 +55,13 @@ class processStoreClass():
         self.processMap = {'para': paragraphClass,
                            'tags': addTagsClass,
                            'echo': echoProcessClass,
-                           'double': doubleProcessClass}
+                           'double': doubleProcessClass,
+                           'output': outputProcessClass}
 
     def addProcess(self, number, name, args):
         if name in self.processMap:
             newProcess = self.processMap[name](args)
-            self.logger.log('Adding process %s as id %s' % (name, number))
+            self.logger.log('Adding process %s as id %s' % (name, number), self.logger.stream)
             self.processes[number] = newProcess
         else:
             self.errorNotifier.doError('Unknown process')
@@ -49,6 +73,14 @@ class processStoreClass():
         else:
             self.errorNotifier.doError('Unknown process number')
             return content
+
+    def flushProcess(self, number, content):
+        if number in self.processes:
+            self.logger.log('Flushing process %s' % number, self.logger.stream)
+            return self.processes[number].flush(content)
+        else:
+            self.errorNotifier.doError('Unknown process number')
+            return None
 
 
 class pipelineStoreClass():
@@ -85,9 +117,11 @@ class pipelineStoreClass():
     def flushPipeline(self, pipelineLetter):
         self.logger.log('flushing stream %s' % pipelineLetter,
                         self.logger.stream)
-        content = None
+        content = ''
         if pipelineLetter in self.pipelineMap:
             for processNum in self.pipelineMap[pipelineLetter]:
-                self.processStore.runProcess(processNum, content)
+                content = self.processStore.flushProcess(processNum, content)
         else:
             self.errorNotifier.doError('Unknown stream identifier')
+        return content
+

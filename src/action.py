@@ -72,7 +72,6 @@ class actionClass():
             ch = arg[i]
             if ch == '\\':
                 if i + 1 < len(arg) and arg[i + 1] == '"':
-                    print ('escaping quote')
                     word += '"'
                     i += 1
                 else:
@@ -177,25 +176,20 @@ class actionClass():
         elif action == 'sendto':
             if len(words):
                 self.logger.log('Calling process ' + words[0], self.logger.action)
+                stream = words[0]
+                content = ''
                 if len(words) > 1:
-                    stream = words[0]
-                    content = words[1:]
-                    self.streamStore.runPipeline(stream, ' '.join(content))
-                else:
-                    print ('content missing')
+                    content = ' '.join(words[1:])
+                self.streamStore.runPipeline(stream, content)
             else:
                 print ('stream id missing')
         elif action == 'flush':
             if len(words):
-                self.logger.log('Calling process ' + words[0], self.logger.action)
-                if len(words) > 0:
-                    stream = words[0]
-                    self.streamStore.flushPipeline(stream)
-                else:
-                    print ('content missing')
+                self.logger.log('Flushing stream ' + words[0], self.logger.action)
+                stream = words[0]
+                self.streamStore.flushPipeline(stream)
             else:
                 print ('stream id missing')
-
         elif action == 'filter':
             if len(words):
                 self.logger.log('Calling process ' + words[0], self.logger.action)

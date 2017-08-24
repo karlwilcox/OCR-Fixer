@@ -1,81 +1,89 @@
+[start]
+* echo _datacount_
+
+
+
+[test]
+^ process 1 para
+^ process 2 tags "<p class=\"content\">" "</p>"
+^ process 3 output "../test-para.txt"
+^ stream a 1 2 3
+* sendto a _dataline_
+9 echo hello
+9 flush a
+& quit
+
+
+
 
 # Comment line
-^ echo TEST000 Working on unnamed pass
-^ echo TEST001 ignored blank line
-^ echo TEST002 ignored comment line
-& echo TEST003 same as previous condition
-1 echo _dataline_
-& echo TEST004 echoing input line 1
-2 section section3
+# ^ echo TEST000 Working on unnamed pass
+# ^ echo TEST001 ignored blank line
+# ^ echo TEST002 ignored comment line
+# & echo TEST003 same as previous condition
+# 1 echo _dataline_
+# & echo TEST004 echoing input line 1
+# 2 section section3
+# 
+# [section2]
+# ^ echo FAIL004 running section2
+# 
+# [section3]
+# ^ echo TEST005 moved to section3
+# ^ restart
+# 1 echo _dataline_
+# & echo TEST005 restart from line 1
+# 2 sub /two/222/
+# & echo TEST006 in line substitution
+# 3 skip 2
+# & finish
+# 7 next
+# 6 echo TEST007 skip from line 3 to 5
+# & echo TEST008 range 2-6 echo
+# 2-6 echo _dataline_
+# $ echo TEST009 execute $ condition after next
+# 
+# [section 4]
+# ^ restart
+# * echo _datacount_ _dataline_
+# 1 goto 4
+# 5 search seven
+# 4 echo TEST010 from line 1 goto 4
+# 7 echo TEST011 from 5 search 'seven'
+# 
+# [section 5]
+# ^ restart
+# ^ counter c1
+# 1 replace this is replaced line 1
+# & echo TEST012 replacement line
+# * echo %c1% _dataline_
+# $ echo TEST013 counter in use
+# 
+# [section 6]
+# ^ restart
+# /six/ echo _dataline_
+# & echo TEST014 match only line containing 'six'
+# 
+# [section 7]
+# ^ restart
+# & echo TEST015 content appended to line 2
+# 3 sub /append/prepend/
+# 2 append This is appended line 1
+# & append This is appended line 2
+# * echo _datacount_ _dataline_
+# 
+# [section 8]
+# ^ restart
+# ^ process 1 echo wibble
+# ^ process 2 double
+# ^ stream a 2 1
+# ^ stream b 2
+# 3 filter b _dataline_
+# * sendto a _dataline_
+# $ echo "     helloooo    " \"word\" "quote mark - \" here"
+# 
+# 
+# [section99]
+# ^ echo TEST999 final section and quit
+# * quit
 
-[section2]
-^ echo FAIL004 running section2
-
-[section3]
-^ echo TEST005 moved to section3
-^ restart
-1 echo _dataline_
-& echo TEST005 restart from line 1
-2 sub /two/222/
-& echo TEST006 in line substitution
-3 skip 2
-& finish
-7 next
-6 echo TEST007 skip from line 3 to 5
-& echo TEST008 range 2-6 echo
-2-6 echo _dataline_
-$ echo TEST009 execute $ condition after next
-
-[section 4]
-^ restart
-* echo _datacount_ _dataline_
-1 goto 4
-5 search seven
-4 echo TEST010 from line 1 goto 4
-7 echo TEST011 from 5 search 'seven'
-
-[section 5]
-^ restart
-^ counter c1
-1 replace this is replaced line 1
-& echo TEST012 replacement line
-* echo %c1% _dataline_
-$ echo TEST013 counter in use
-
-[section 6]
-^ restart
-/six/ echo _dataline_
-& echo TEST014 match only line containing 'six'
-
-[section 7]
-^ restart
-& echo TEST015 content appended to line 2
-3 sub /append/prepend/
-2 append This is appended line 1
-& append This is appended line 2
-* echo _datacount_ _dataline_
-
-[section 8]
-^ restart
-^ process 1 echo wibble
-^ process 2 double
-^ stream a 2 1
-^ stream b 2
-3 filter b _dataline_
-* sendto a _dataline_
-$ echo "     helloooo    " \"word\" "quote mark - \" here"
-
-
-[section99]
-^ echo TEST999 final section and quit
-* quit
-
-# ^ process 1 para blank multi
-# & process 2 paraTags <p> </p>
-# & process 3 write output.txt
-# & stream a 1 2 3
-# & process 4 heading single
-# & process 5 headingTags <h2> </h2>
-# & stream b 4 5 3
-# * pushTo a
-# * pushTo b

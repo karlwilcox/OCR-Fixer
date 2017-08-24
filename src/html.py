@@ -15,4 +15,9 @@ class addTagsClass(processSuperClass):
             self.startTag = args[0]
 
     def doAction(self, content):
-        return '\n%s%s%s\n' % (self.startTag, content, self.endTag)
+        if content is not None and len(content):
+            content = '\n%s%s%s\n' % (self.startTag, content, self.endTag)
+        return content
+
+    def flush(self, content):
+        return self.doAction(content)

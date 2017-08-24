@@ -7,5 +7,5 @@ class processSuperClass(object):
     def doAction(self, input):
         assert False, 'doAction must be defined for process'
 
-    def flush(self):
-        pass
+    def flush(self, input):
+        return input
