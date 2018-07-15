@@ -1,5 +1,6 @@
 [start]
 * echo _datacount_
+$ quit
 
 
 

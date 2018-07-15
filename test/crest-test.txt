@@ -1,0 +1,6 @@
+[init]
+^ process 1 alphaEntry
+& process 2 echo
+& stream a 1 2
+* sendto a _dataline_
+

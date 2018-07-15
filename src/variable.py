@@ -14,9 +14,10 @@ class variableClass():
         self.logger.log(action + ' / ' + name + ' / ' + str(value), self.logger.variable)
         retval = ''
         if action == 'set':
-            self.values[name] = value
             if name == 'loglevel':
                 self.logger.showLevel = int(value)
+            else:
+                self.values[name] = value
         elif action == 'get':
             if name in self.counters:
                 self.counters[name] += 1

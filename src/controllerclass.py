@@ -126,7 +126,7 @@ class controllerClass:
             self.currentLine += 1
             return True
         else:
-            self.logger.log('At end of pass', 10)
+            self.logger.log('At end of pass', self.logger.passes)
             # self.currentLine = self.passMap[self.currentPass]['start']
             return False
 

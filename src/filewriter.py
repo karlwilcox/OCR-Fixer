@@ -15,8 +15,10 @@ class fileWriterClass:
         self.files[number] = handle
         return True
 
-    def closeFile(self, number):
+    def closeFile(self, number, data=None):
         if number in self.files:
+            if data is not None:
+                self.files[number].write(data)
             self.files[number].close()
             del(self.files[number])
             return True

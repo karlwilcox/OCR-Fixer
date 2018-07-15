@@ -1,4 +1,4 @@
-from paragraph import paragraphClass
+from content import paragraphClass, headingClass, alphaEntryClass
 from html import addTagsClass
 from superclasses import processSuperClass
 
@@ -10,17 +10,9 @@ class echoProcessClass(processSuperClass):
         self.args = args
 
     def doAction(self, content):
-        print 'Echo %s\n%s\nEcho Ends\n' % (self.args, content)
+        # print 'Echo %s\n%s\nEcho Ends\n' % (self.args, content)
+        print content
         return content
-
-
-class doubleProcessClass(processSuperClass):
-    """Demonstration class for processing"""
-    def __init__(self, args):
-        super(doubleProcessClass, self).__init__()
-
-    def doAction(self, content):
-        return content + content
 
 
 class outputProcessClass(processSuperClass):
@@ -32,7 +24,8 @@ class outputProcessClass(processSuperClass):
             try:
                 self.fileHandle = open(args[0], "w")
             except IOError:
-                self.errorNotifier.doError('Could not open ' + args[0])
+                # self.errorNotifier.doError('Could not open ' + args[0])
+                print "Could not open file"
 
     def doAction(self, content):
         if self.fileHandle is not None:
@@ -52,11 +45,14 @@ class processStoreClass():
         self.errorNotifier = errorNotifier
         self.logger = logger
         self.processes = {}
-        self.processMap = {'para': paragraphClass,
-                           'tags': addTagsClass,
-                           'echo': echoProcessClass,
-                           'double': doubleProcessClass,
-                           'output': outputProcessClass}
+        self.processMap = {
+            'para': paragraphClass,
+            'heading': headingClass,
+            'tags': addTagsClass,
+            'echo': echoProcessClass,
+            'alphaEntry': alphaEntryClass,
+            'output': outputProcessClass
+        }
 
     def addProcess(self, number, name, args):
         if name in self.processMap:

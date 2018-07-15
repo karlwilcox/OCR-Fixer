@@ -1,9 +1,10 @@
 import re
-import os
+# import os
 from filewriter import fileWriterClass
 from variable import variableClass
 from process import processStoreClass
 from process import pipelineStoreClass
+from superclasses import processSuperClass
 
 
 class actionClass():
@@ -17,9 +18,12 @@ class actionClass():
         self.result = None
         self.fileWriter = fileWriterClass(logger, errorNotifier)
         self.variable = variableClass(logger, errorNotifier, sourceHandler, controller)
+        processSuperClass.variables = self.variable
         self.matchedPreOrPost = None
         self.processStore = processStoreClass(logger, errorNotifier)
         self.streamStore = pipelineStoreClass(logger, errorNotifier, self.processStore)
+        self.exitNow = False
+        self.nextPass = False
 
     def setHandlers(self, matchedPreOrPost):
         self.matchedPreOrPost = matchedPreOrPost
@@ -34,7 +38,8 @@ class actionClass():
         return self.variable.builtin(match.group(1))
 
     def doSub(self, expression, line):
-        parts = re.search('/(?P<patt>.*?)/(?P<repl>.*?)/(?P<flag>.*)$',
+        # TODO need to search for \/ in string somehow..? Allow search for forward slash
+        parts = re.search('(.)(?P<patt>.*?)\1(?P<repl>.*?)\1(?P<flag>.*)$',
                           expression)
         if not(parts):
             self.errorNotifier.doError('Error in substitution')
@@ -52,14 +57,21 @@ class actionClass():
                 flags |= re.DOTALL
             elif f == 'u':
                 flags |= re.UNICODE
-        self.logger.log(pattern + ' / ' + replacement + ' / ' + flagstring, self.logger.action)
+        self.logger.log(pattern + ' / ' + replacement + ' / ' + flagstring + ' ' + line, self.logger.action)
         return re.sub(pattern, replacement, line, flags=flags)
 
     def subDataline(self, match):
         if self.dataLine is None:
-            self.errorNotifier.doError('_dataline_ is not valid')
+            self.errorNotifier.doError('_dataline_ for line no. ' + str(self.sourceHandler.getLineNo()) + ' is not valid')
             return ''
         return self.dataLine
+
+    def doCorrect(self, line, words):
+        if len(words) != 2:
+            self.errorNotifier.doError("usage: correct original replacement")
+            return line
+        return line.replace(words[0], words[1])
+
 
     def argToWords(self, arg):
         '''split input into words, respecting quotation marks (& escapes).
@@ -100,28 +112,45 @@ class actionClass():
 
     def doAction(self, line, action, argument):
         self.result = True  # Most actions always succeed, so set as default
+        self.newPass = False
         retval = line
-        # substitute variable, unless % characters are preceeded by backslash
-        argument = re.sub('(?<!\\\\)%([a-zA-z0-9-]+?)(?<!\\\\)%', self.subVar, argument)
-        self.dataLine = line
-        # substitute current data, unless _ characters are preceeded by backslash
-        argument = re.sub('(?<!\\\\)_dataline_(?<!\\\\)', self.subDataline, argument)
-        # substitute built-ins, unless _ characters are preceeded by backslash
-        argument = re.sub('(?<!\\\\)_([a-zA-z0-9-]+?)(?<!\\\\)_', self.subBuiltin, argument)
-        # Now remove any backslashes that were escaping the above
-        argument = re.sub('\\\\(?=[%_])', '', argument)
-        # finally, split the argument into words, respecting quote marks (and more escapes!)
-        words = self.argToWords(argument)
-        if action == 'goto':
+        if argument != "":
+            # substitute variable, unless % characters are preceeded by backslash
+            argument = re.sub('(?<!\\\\)%([a-zA-z0-9-]+?)(?<!\\\\)%', self.subVar, argument)
+            self.dataLine = line
+            # substitute current data, unless _ characters are preceeded by backslash
+            argument = re.sub('(?<!\\\\)_dataline_(?<!\\\\)', self.subDataline, argument)
+            # substitute built-ins, unless _ characters are preceeded by backslash
+            argument = re.sub('(?<!\\\\)_([a-zA-z0-9-]+?)(?<!\\\\)_', self.subBuiltin, argument)
+            # Now remove any backslashes that were escaping the above
+            argument = re.sub('\\\\(?=[%_])', '', argument)
+            # finally, split the argument into words, respecting quote marks (and more escapes!)
+            words = self.argToWords(argument)
+        else:
+            words = ['',''];
+        self.logger.log('> ' + action + ' ' + argument, self.logger.action)
+        if action == 'next':
+            self.newPass = self.controller.nextPass()
+        elif action == 'section':
+            self.newPass = self.controller.namedPass(words[0])          # substituted
+        elif action == 'goto':
             if self.sourceHandler.gotoLine(words[0]):
                 retval = None  # dataLine is invalid after goto
+                self.controller.ignoreRest()
         elif action == 'skip' or action == 'ignore':
             if self.sourceHandler.skipLines(words[0]):
                 retval = None  # dataLine is invalid after skip
+                self.controller.ignoreRest()
+        elif action == 'quit' or action == 'exit':
+            self.exitNow = True  # Force exit from outer loop
         elif action == 'search':
             self.result = self.sourceHandler.findLine(words[0])
             if self.result:
                 retval = None  # dataline is invalid after a successful search
+        elif action == 'correct' or action == 'fix':
+            retval = self.doCorrect(line, words)
+        elif action == 'delete' or action == 'del':
+            retval = self.doCorrect(line, [words[0], ''])
         elif action == 'sub':
             retval = self.doSub(words[0], line)
         elif action == 'replace':

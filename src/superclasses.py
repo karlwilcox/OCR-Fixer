@@ -1,6 +1,8 @@
 
 class processSuperClass(object):
     """docstring for processClass"""
+    variables = None
+
     def __init__(self):
         pass
 

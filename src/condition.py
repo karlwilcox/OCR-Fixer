@@ -68,25 +68,31 @@ class conditionClass():
                         retval = True
                         self.setMatch(match.groups())
                 elif ch.isdigit():
-                    try:
-                        dash = condition.find('-')
-                        if dash > 0:  # must be a range
+                    lineVal = int(lineNo)
+                    dash = condition.find('-')
+                    comma = condition.find(',')
+                    if dash > 0:  # should be a range
+                        try:
                             start = int(condition[0:dash])
                             end = int(condition[dash + 1:])
+                        except ValueError:
+                            self.errorNotifier.doError('range condition should be number-number')
                         else:
-                            start = int(condition)
-                            end = start
-                    except ValueError:
-                        self.errorNotifier.doError('range condition should be number-number')
-                    else:
-                        if end < start:
-                            self.errorNotifier.doError('end is before start')
-                        else:
-                            lineNo = int(lineNo)
-                            self.logger.log('testing ' + str(lineNo) + ' against range ' +
+                            if end < start:
+                                self.errorNotifier.doError('end is before start')
+                            self.logger.log('testing ' + lineNo + ' against range ' +
                                             str(start) + ' to ' + str(end),
                                             self.logger.condition)
-                            retval = lineNo >= start and lineNo <= end
+                            retval = lineVal >= start and lineVal <= end
+                    else: # just a plain number
+                        try:
+                            exact = int(condition)
+                        except ValueError:
+                            self.logger.log('testing ' + lineNo + ' against ' + str(exact),
+                                            self.logger.condition)
+                            self.errorNotifier.doError('Invalid line no: %s' % condition)
+                        else:
+                            retval = lineVal == exact
                 elif ch == ':':
                     retval = self.checkRange(condition, line)
                 else:

@@ -8,7 +8,9 @@ class loggerClass():
     action = 8
     variable = 16
     stream = 32
-    showLevel = 0
+    passes = 64
+
+    showLevel = 8
 
     def __init__(self, outputFile=None):
         if outputFile is not None:
@@ -21,6 +23,6 @@ class loggerClass():
     def log(self, message, pattern=255):
         if pattern & self.showLevel:
             if self.fileHandle is not None:
-                self.fileHandle.write(message.strip + '\n')
+                self.fileHandle.write(message.strip() + '\n')
             else:
-                print(message.strip())
+                print(message)

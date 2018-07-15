@@ -1,0 +1,35 @@
+# Boutell's heraldry Historical and popular
+# Test control script
+
+[preface]
+
+^ set loglevel 4
+& open 1 out/preface.html
+& writeln 1 <h1>PREFACE TO THE FIRST EDITION</h1>
+
+# Section limits
+1 goto 179
+
+288 close 1
+& exit
+
+# page furniture
+182 ignore
+207 skip 2
+248 skip 5
+
+# Global spelling corrections
+#* sub /eraldiy/eraldry/
+
+# This section Spelling Corrections
+190 del ^
+202 fix  bimes times 
+227 fix  Gk\) Go 
+212 fix  /' \" 
+214 fix  Ee Re 
+237 fix  fleo aeo 
+
+200 append APPENDED DATA
+
+# Everything else is paragraphs
+* writeln 1 _dataline_

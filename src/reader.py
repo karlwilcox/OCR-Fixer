@@ -20,47 +20,40 @@ def readBook(controlFileName, dataFileName):
     conditionChecker.setHandlers(sourceHandler.setMatch, actionHandler.getLastResult)
     actionHandler.setHandlers(conditionChecker.getPreOrPostMatch)
 
-    exitNow = False
     sourceHandler.reset()
+    newPass = False
     currentPass = controller.nextPass()  # Go to the first pass
     # Process this pass
-    while not(exitNow):
-        newPass = False
+    while not(actionHandler.exitNow):
         controller.setPass(currentPass)
         # Process any pre-pass actions
         while controller.nextLine():
             condition, action, argument = controller.getLine()
             if conditionChecker.check(condition, '^', ''):
                 actionHandler.doAction('', action, argument)
+                newPass = actionHandler.nextPass
         # For each line of input data
-        while not(exitNow) and sourceHandler.nextLine():
+        while not(actionHandler.exitNow) and sourceHandler.nextLine():
             dataLine = sourceHandler.getLine()
+            dataCount = sourceHandler.getLineNo()
             controller.reset()
             # For each line in the current pass of the control file
             while not(newPass) and controller.nextLine():
                 condition, action, argument = controller.getLine()
-                if conditionChecker.check(condition, sourceHandler.getLineNo(), dataLine):
-                    # process pass related commands first
-                    if action == 'next':
-                        newPass = controller.nextPass()
-                        break
-                    elif action == 'section':  # TODO this argument hasn't been variable
-                        newPass = controller.namedPass(argument)          # substituted
-                    elif action == 'quit' or action == 'exit':
-                        exitNow = True  # Force exit from outer loop
-                        break
-                    else:  # action must be related to the actual content
-                        dataLine = actionHandler.doAction(dataLine, action, argument)
+                if conditionChecker.check(condition, dataCount, dataLine):
+                    dataLine = actionHandler.doAction(dataLine, action, argument)
+                    newPass = actionHandler.nextPass
         # Process any post-pass actions
         controller.reset()
         while controller.nextLine():
             condition, action, argument = controller.getLine()
             if conditionChecker.check(condition, '$', ''):
                 actionHandler.doAction('', action, argument)
+                newPass = actionHandler.nextPass
         if not(newPass):
             newPass = controller.nextPass()
             if not(newPass):
-                exitNow = True
+                actionHandler.exitNow = True
         currentPass = newPass  # set the pass no. here, so we close current pass first
 
 
@@ -72,5 +65,4 @@ if len(sys.argv) > 3:
     logger = loggerClass(sys.argv[3])
 else:
     logger = loggerClass()
-    logger.showLevel = 40
 readBook(sys.argv[1], sys.argv[2])

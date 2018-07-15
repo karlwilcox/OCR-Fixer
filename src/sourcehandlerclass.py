@@ -8,27 +8,34 @@ class sourceHandlerClass:
         self.errorNotifier = errorNotifier
         self.logger = logger
         self.fileHandle = open(fileName)
-        self.dataCount = 0
         self.dataLine = ''
         self.fileName = fileName
         self.matches = None
         self.pipeline = deque()
         self.prependTo = None
-        self.linesRead = 0
+        self.linesRead = 0 # Number to report to outside world
+        self.actualLinesRead = 0 # internal count through file
+
+    def readFromFile(self):
+        lineRead = self.fileHandle.readline()
+        self.actualLinesRead += 1
+        return lineRead
 
     def nextLine(self):
-        lineRead = self.fileHandle.readline()
+        # If stuff already in the pipeline (e.g. from Append), just say we are OK
+        if len(self.pipeline):
+            return True
+        # otherwise, try to put a new line into the pipeline from the source file
+        lineRead = self.readFromFile()
+        # print('line read is: %s' % lineRead)
         if lineRead != '':
-            self.linesRead += 1
-            self.pipeline.append((self.linesRead, lineRead))
+            self.pipeline.append((self.actualLinesRead, lineRead))
             return True
         else:
-            if len(self.pipeline):
-                return True
             return False
 
     def appendLine(self, newText):
-        self.pipeline.append((self.dataCount + 1, newText))
+        self.pipeline.append((self.linesRead + 1, newText))
 
     def skipLines(self, number=1):
         retval = False
@@ -38,15 +45,13 @@ class sourceHandlerClass:
             num = 1
         if num < 1:
             num = 1
-        self.dataLine = None  # invalid after skip, until next read
         for i in range(1, num):
-            self.dataCount += 1
-            discard = self.fileHandle.readline()
+            discard = self.readFromFile()
             if discard == '':  # EOF
                 break
-        else:
-            retval = True
-            self.logger.log('After skip line is ' + str(self.dataCount), self.logger.action)
+        self.pipeline.clear();
+        retval = True
+        self.logger.log('After skip line is ' + str(self.actualLinesRead), self.logger.action)
         return retval
 
     def gotoLine(self, number):
@@ -55,21 +60,22 @@ class sourceHandlerClass:
         except ValueError:
             self.errorNotifier.doError('Expected number: ' + number)
             return False
-        if num <= self.dataCount:
+        if num <= self.linesRead:
             self.errorNotifier.doError('Cannot goto backwards in file')
-        self.dataLine = None  # invalid after goto, until next read
-        for i in range(self.dataCount, num - 1):
-            discard = self.fileHandle.readline()
+            return False
+        for i in range(self.actualLinesRead, num - 1):
+            discard = self.readFromFile()
             if discard == '':  # EOF
                 return False
-        self.dataCount = num - 1
+        self.logger.log('Line is now ' + str(self.actualLinesRead), self.logger.action)
+        self.pipeline.clear()
         return True
 
     def reset(self):
         self.dataLine = ''  # invalid until next read
-        self.dataCount = 0
         self.fileHandle.seek(0)
         self.linesRead = 0
+        self.actualReadLines = 0
 
     def findLine(self, pattern):
         found = False
@@ -83,16 +89,16 @@ class sourceHandlerClass:
         while counter < limit:
             counter += 1
             newpos = self.fileHandle.tell()  # remember where we are
-            test = self.fileHandle.readline()
-            self.dataCount += 1
+            test = self.readFromFile()
             if test == '':
                 break  # EOF
             match = re.search(pattern, test)
             if match:
                 self.fileHandle.seek(newpos)  # go back to previous line
-                self.dataCount -= 1
+                self.linesRead -= 1
                 self.matches = match.groups()
                 self.dataLine = None  # invalid until next read
+                self.pipeline.clear()
                 found = True
                 break
         else:
@@ -101,10 +107,10 @@ class sourceHandlerClass:
         return found
 
     def getLineNo(self):
-        return self.dataCount
+        return self.linesRead
 
     def getLine(self):  # get current line, without reading new one
-        self.dataCount, self.dataLine = self.pipeline.popleft()
+        self.linesRead, self.dataLine = self.pipeline.popleft()
         return self.dataLine
 
     def lastMatch(self, sub=0):
