@@ -84,6 +84,15 @@ class conditionClass():
                                             str(start) + ' to ' + str(end),
                                             self.logger.condition)
                             retval = lineVal >= start and lineVal <= end
+                    elif comma > 0:
+                        tests = condition.split(',')
+                        for test in tests:
+                            try:
+                                if lineVal == int(test):
+                                    retval = True
+                                    break
+                            except ValueError:
+                                self.errorNotifier('Non-digit found in line number list')
                     else: # just a plain number
                         try:
                             exact = int(condition)

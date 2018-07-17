@@ -6,6 +6,8 @@ class fileWriterClass:
         self.files = {}
 
     def openFile(self, number, fileName):
+        if number == 0:
+            return False
         self.closeFile(number)
         try:
             handle = open(fileName, "w")
@@ -25,22 +27,28 @@ class fileWriterClass:
         return False
 
     def writeFile(self, number, data):
+        if number == 0:
+            print data
+            return True
         if number in self.files:
             self.files[number].write(data)
             return True
         return False
 
     def writelnFile(self, number, data):
+        if number == 0:
+            print data
+            return True
         if number in self.files:
             self.files[number].write(data + '\n')
             return True
         return False
 
     def getNumber(self, wordList):
-        try:
-            number = int(wordList[0])
+        if len(wordList[0]) > 1 and wordList[0][0] == '$' and wordList[0][1].isdigit():
+            number = int(wordList[0][1])
             data = ' '.join(wordList[1:])
-        except ValueError:
+        else:
             number = 1
             data = ' '.join(wordList)
         return (number, data)

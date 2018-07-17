@@ -1,4 +1,4 @@
-
+import re
 
 class variableClass():
     """docstring for variable"""
@@ -65,3 +65,20 @@ class variableClass():
         else:
             self.errorNotifier.doError('Unknown built-in: ' + varname)
         return str(retval)
+
+    def subVar(self, match):
+        return self.user('get', match.group(1))
+
+    def subBuiltin(self, match):
+        return self.builtin(match.group(1))
+
+    def subAll(self, content, currentDataLine = ''):
+        # substitute variable, unless % characters are preceeded by backslash
+        content = re.sub('(?<!\\\\)%([a-zA-z0-9-]+?)(?<!\\\\)%', self.subVar, content)
+        # substitute current data, unless _ characters are preceeded by backslash
+        content = re.sub('(?<!\\\\)_dataline_(?<!\\\\)', currentDataLine, content)
+        # substitute built-ins, unless _ characters are preceeded by backslash
+        content = re.sub('(?<!\\\\)_([a-zA-z0-9-]+?)(?<!\\\\)_', self.subBuiltin, content)
+        # Now remove any backslashes that were escaping the above
+        content = re.sub('\\\\(?=[%_])', '', content)
+        return content

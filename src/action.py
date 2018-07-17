@@ -1,10 +1,10 @@
-import re
 # import os
 from filewriter import fileWriterClass
 from variable import variableClass
 from process import processStoreClass
 from process import pipelineStoreClass
 from superclasses import processSuperClass
+from html import htmlTagsClass
 
 
 class actionClass():
@@ -14,7 +14,6 @@ class actionClass():
         self.logger = logger
         self.sourceHandler = sourceHandler
         self.controller = controller
-        self.dataLine = None
         self.result = None
         self.fileWriter = fileWriterClass(logger, errorNotifier)
         self.variable = variableClass(logger, errorNotifier, sourceHandler, controller)
@@ -22,6 +21,7 @@ class actionClass():
         self.matchedPreOrPost = None
         self.processStore = processStoreClass(logger, errorNotifier)
         self.streamStore = pipelineStoreClass(logger, errorNotifier, self.processStore)
+        self.html = htmlTagsClass(self.logger, self.fileWriter, self.variable)
         self.exitNow = False
         self.nextPass = False
 
@@ -30,12 +30,6 @@ class actionClass():
 
     def getLastResult(self):
         return self.result
-
-    def subVar(self, match):
-        return self.variable.user('get', match.group(1))
-
-    def subBuiltin(self, match):
-        return self.variable.builtin(match.group(1))
 
     def doSub(self, expression, line):
         # TODO need to search for \/ in string somehow..? Allow search for forward slash
@@ -59,12 +53,6 @@ class actionClass():
                 flags |= re.UNICODE
         self.logger.log(pattern + ' / ' + replacement + ' / ' + flagstring + ' ' + line, self.logger.action)
         return re.sub(pattern, replacement, line, flags=flags)
-
-    def subDataline(self, match):
-        if self.dataLine is None:
-            self.errorNotifier.doError('_dataline_ for line no. ' + str(self.sourceHandler.getLineNo()) + ' is not valid')
-            return ''
-        return self.dataLine
 
     def doCorrect(self, line, words):
         if len(words) != 2:
@@ -116,15 +104,7 @@ class actionClass():
         retval = line
         if argument != "":
             # substitute variable, unless % characters are preceeded by backslash
-            argument = re.sub('(?<!\\\\)%([a-zA-z0-9-]+?)(?<!\\\\)%', self.subVar, argument)
-            self.dataLine = line
-            # substitute current data, unless _ characters are preceeded by backslash
-            argument = re.sub('(?<!\\\\)_dataline_(?<!\\\\)', self.subDataline, argument)
-            # substitute built-ins, unless _ characters are preceeded by backslash
-            argument = re.sub('(?<!\\\\)_([a-zA-z0-9-]+?)(?<!\\\\)_', self.subBuiltin, argument)
-            # Now remove any backslashes that were escaping the above
-            argument = re.sub('\\\\(?=[%_])', '', argument)
-            # finally, split the argument into words, respecting quote marks (and more escapes!)
+            argument = self.variable.subAll(argument, line)
             words = self.argToWords(argument)
         else:
             words = ['',''];
@@ -164,6 +144,10 @@ class actionClass():
         elif action == 'unset':
             for w in words:
                 self.variable.user('unset', w)
+        elif len(action) > 1 and action[0] == 'h' and action[1].isdigit():
+            self.html.heading(action[1], *self.fileWriter.getNumber(words))
+        elif action == 'para':
+            self.html.para(*self.fileWriter.getNumber(words))
         elif action == 'open':
             self.fileWriter.openFile(*self.fileWriter.getNumber(words))
         elif action == 'write':
@@ -176,6 +160,8 @@ class actionClass():
             self.sourceHandler.appendLine(argument)  # NOTE, does not use words
         elif action == 'echo':
             print(' '.join(words))
+        elif action == 'log':
+            self.logger.log(' '.join(words),self.logger.user)
         elif action == 'process':
             if len(words):
                 self.logger.log('Calling process ' + words[0], self.logger.action)
@@ -232,10 +218,10 @@ class actionClass():
                 print ('stream id missing')
         elif action == 'restart':
             if self.matchedPreOrPost():
-                self.logger.log('Calling reset', self.logger.section | self.logger.action)
+                self.logger.log('Calling restart', self.logger.section | self.logger.action)
                 self.sourceHandler.reset()
             else:
-                self.errorNotifier.doError('Reset only valid with ^ or $ condition')
+                self.errorNotifier.doError('Restart only valid with ^ or $ condition')
         else:
             self.errorNotifier.doError('Unknown action')
         return retval
