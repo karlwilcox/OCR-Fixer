@@ -1,4 +1,4 @@
-# import os
+import re
 from filewriter import fileWriterClass
 from variable import variableClass
 from process import processStoreClass
@@ -107,7 +107,7 @@ class actionClass():
             argument = self.variable.subAll(argument, line)
             words = self.argToWords(argument)
         else:
-            words = ['',''];
+            words = ['','']
         self.logger.log('> ' + action + ' ' + argument, self.logger.action)
         if action == 'next':
             self.newPass = self.controller.nextPass()

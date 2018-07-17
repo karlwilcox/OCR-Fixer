@@ -35,7 +35,7 @@ class htmlTagsClass():
 
     def reflow(self, text, limit = 80):
         retval = b''
-        count = 0;
+        count = 0
         if limit < 10:
             limit = 10
         words = text.split(' ')
