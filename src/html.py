@@ -55,7 +55,7 @@ class htmlTagsClass():
         return retval
 
     def para(self, fileHandle, line):
-        line = line.rstrip('\n')
+        line = line.rstrip('\n ')
         if line == None or line == '': # End of paragraph (possibly)
             if self.paraStore != '': # Yes it is!
                 self.fileWriter.writeFile( fileHandle, self.reflow('<p' + self.subbedAttrs + '>' + self.paraStore + '</p>'))

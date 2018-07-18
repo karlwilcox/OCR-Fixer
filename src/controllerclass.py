@@ -13,9 +13,23 @@ class controllerClass:
         self.errorNotifier = errorNotifier
         controlFileLine = 0
         passIndex = 0
+        lookFor = None
+        cond = ''
+        act = ''
+        fh =''
+        hereDocStart = ''
+        arg = ''
         try:
             for line in open(fileName):
                 controlFileLine += 1
+                if lookFor is not None:
+                    if line.strip() == lookFor:
+                        self.controlLines.append((hereDocStart, (cond, act, fh, arg)))
+                        lookFor = None
+                        hereDocStart = ''
+                    else: # gather up lines in a heredoc
+                        arg = arg + line
+                    continue
                 line = line.strip()
                 if re.match('#', line):
                     continue    # ignore comment only lines
@@ -33,7 +47,15 @@ class controllerClass:
                     self.passMap.append({'name': '(unnamed)',
                                         'start': len(self.controlLines)})
                     passIndex = 1
-                self.controlLines.append((controlFileLine, self.getParts(line)))
+                (cond, act, fh, arg) = self.getParts(line)
+                if arg.startswith('<<<'):
+                    words = arg.split()
+                    if len(words) > 1:
+                        lookFor = words[1]
+                        hereDocStart = controlFileLine
+                        arg = ''
+                else:
+                    self.controlLines.append((controlFileLine, (cond, act, fh, arg)))
             self.passMap[passIndex - 1]['end'] = len(self.controlLines) - 1
         except IOError:
             print('Control file not found\n')

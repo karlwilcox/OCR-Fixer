@@ -33,7 +33,7 @@ class sourceHandlerClass:
 
     def nextLine(self):
         if self.fileHandle is None:
-            self.errorNotifier('No source file')
+            self.errorNotifier.doError('No source file')
             return False
         # If stuff already in the pipeline (e.g. from Append), just say we are OK
         if len(self.pipeline):
@@ -52,7 +52,7 @@ class sourceHandlerClass:
 
     def skipLines(self, number=1):
         if self.fileHandle is None:
-            self.errorNotifier('No source file')
+            self.errorNotifier.doError('No source file')
             return False
         retval = False
         try:
@@ -72,7 +72,7 @@ class sourceHandlerClass:
 
     def gotoLine(self, number):
         if self.fileHandle is None:
-            self.errorNotifier('No source file')
+            self.errorNotifier.doError('No source file')
             return False
         try:
             num = int(number)
