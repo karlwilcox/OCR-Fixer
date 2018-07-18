@@ -4,13 +4,20 @@
 [PREFACE]
 
 ^ logfile log.txt
-& set loglevel 32
+& set loglevel 128
 & log hello world
 & source duke.txt
 & open $1 out/preface.html
 
 # Section limits
-1 h1 $1 PREFACE TO THE FIRST EDITION.
+1 write $1 <<< EOF
+---
+layout: boutell
+up: index.html
+next: tbd.html
+---
+EOF
+& h1 $1 PREFACE TO THE FIRST EDITION.
 & goto 122
 
 232 h1 $1 PREFACE THE SECOND AND THIRD EDITIONS.
@@ -19,10 +26,9 @@
 400 close $1
 & exit
 
-124 log at _datacount_ with _dataline_
-
 # page furniture
-146,151 ignore
+147,151 ignore
+
 192,268,309,349,390 skip 5
 
 # This section Spelling Corrections

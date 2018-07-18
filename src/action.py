@@ -106,7 +106,7 @@ class actionClass():
             words.append('')
         return tuple(words)
 
-    def doAction(self, line, action, filehandle, argument):
+    def doAction(self, line, action, filehandle, argument, match):
         self.result = True  # Most actions always succeed, so set as default
         self.newPass = False
         retval = line
@@ -155,6 +155,8 @@ class actionClass():
             self.variable.user('unset',  self.argToWords(argument, 2))
         elif len(action) > 1 and action[0] == 'h' and action[1].isdigit():
             self.html.heading(action[1], filehandle, argument)
+        # elif action == 'figure' or action == 'fig':
+        #     self.html.figure( filehandle, argument)
         elif action == 'para':
             self.html.para( filehandle, argument)
         elif action == 'open':
@@ -230,7 +232,7 @@ class actionClass():
         #     else:
         #         print ('stream id missing')  
         elif action == 'restart':
-            if self.matchedPreOrPost():
+            if self.matchedPreOrPost(): # This is nonsense
                 self.logger.log('Calling restart', self.logger.section | self.logger.action)
                 self.sourceHandler.reset()
             else:

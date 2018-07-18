@@ -30,8 +30,9 @@ def readBook(controlFileName):
         # Process any pre-pass actions
         while controller.nextLine():
             condition, action, filehandle, argument = controller.getLine()
-            if conditionChecker.check(condition, '^', ''):
-                actionHandler.doAction('', action, filehandle, argument)
+            match = conditionChecker.check(condition, '^', '')
+            if match != conditionClass.NOMATCH:
+                actionHandler.doAction('', action, filehandle, argument, match)
                 newPass = actionHandler.nextPass
         # For each line of input data
         while not(actionHandler.exitNow) and sourceHandler.nextLine():
@@ -41,15 +42,17 @@ def readBook(controlFileName):
             # For each line in the current pass of the control file
             while not(newPass) and controller.nextLine():
                 condition, action, filehandle, argument = controller.getLine()
-                if conditionChecker.check(condition, dataCount, dataLine):
-                    dataLine = actionHandler.doAction(dataLine, action, filehandle, argument)
+                match = conditionChecker.check(condition, dataCount, dataLine)
+                if match != conditionClass.NOMATCH:
+                    dataLine = actionHandler.doAction(dataLine, action, filehandle, argument, match)
                     newPass = actionHandler.nextPass
         # Process any post-pass actions
         controller.reset()
         while controller.nextLine():
             condition, action, filehandle, argument = controller.getLine()
-            if conditionChecker.check(condition, '$', ''):
-                actionHandler.doAction('', action, filehandle, argument)
+            match = conditionChecker.check(condition, '$', '')
+            if match != conditionClass.NOMATCH:
+                actionHandler.doAction('', action, filehandle, argument, match)
                 newPass = actionHandler.nextPass
         if not(newPass):
             newPass = controller.nextPass()
