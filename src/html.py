@@ -28,7 +28,7 @@ class htmlTagsClass():
         self.logger = logger
         self.fileWriter = fileWriter
         self.variables = variables
-        self.commonAttrs = 'data-source-line="_datacount_"'
+        self.commonAttrs = 'data-source-line="_datacount_" data-source-file="_datafile_"'
         self.subbedAttrs = ''
         self.paraStore = ''
         self.paraHyphen = False
@@ -55,6 +55,7 @@ class htmlTagsClass():
         return retval
 
     def para(self, fileHandle, line):
+        line = line.rstrip('\n')
         if line == None or line == '': # End of paragraph (possibly)
             if self.paraStore != '': # Yes it is!
                 self.fileWriter.writeFile( fileHandle, self.reflow('<p' + self.subbedAttrs + '>' + self.paraStore + '</p>'))
@@ -73,4 +74,4 @@ class htmlTagsClass():
             self.paraStore = self.paraStore + gap + line  
 
     def heading(self, level, fileHandle, content):
-        self.fileWriter.writeFile(fileHandle, '<h' + level + self.getCommonAttrs() + '>' + content + '</h' + level + '>\n')      
+        self.fileWriter.writeFile(fileHandle, '<h' + level + self.getCommonAttrs() + '>' + content + '</h' + level + '>\n\n')      

@@ -10,7 +10,9 @@ class variableClass():
         self.values = {}
         self.counters = {}
 
-    def user(self, action, name, value=''):
+    def user(self, action, words):
+        name = words[0]
+        value = ' '.join(words[1:])
         self.logger.log(action + ' / ' + name + ' / ' + str(value), self.logger.variable)
         retval = ''
         if action == 'set':
@@ -28,8 +30,10 @@ class variableClass():
             if value == '':
                 value = 0
             self.counters[name] = value
-        elif action == 'unset' and name in self.values:
-            del self.values[name]
+        elif action == 'unset':
+            for word in words:
+                if word in self.values:
+                    del self.values[word]
         else:
             self.errorNotifier.doError('Unknown action for parameter')
         return retval

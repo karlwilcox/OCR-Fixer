@@ -5,10 +5,11 @@ class fileWriterClass:
         self.logger = logger
         self.files = {}
 
-    def openFile(self, number, fileName):
+    def openFile(self, filehandle, fileName):
+        number = self.getNumber(filehandle)
         if number == 0:
             return False
-        self.closeFile(number)
+        self.closeFile('$' + str(number))
         try:
             handle = open(fileName, "w")
         except IOError:
@@ -17,7 +18,8 @@ class fileWriterClass:
         self.files[number] = handle
         return True
 
-    def closeFile(self, number, data=None):
+    def closeFile(self, filehandle, data=None):
+        number = self.getNumber(filehandle)
         if number in self.files:
             if data is not None:
                 self.files[number].write(data)
@@ -26,7 +28,8 @@ class fileWriterClass:
             return True
         return False
 
-    def writeFile(self, number, data):
+    def writeFile(self, filehandle, data):
+        number = self.getNumber(filehandle)
         if number == 0:
             print data
             return True
@@ -35,7 +38,8 @@ class fileWriterClass:
             return True
         return False
 
-    def writelnFile(self, number, data):
+    def writelnFile(self, filehandle, data):
+        number = self.getNumber(filehandle)
         if number == 0:
             print data
             return True
@@ -44,11 +48,9 @@ class fileWriterClass:
             return True
         return False
 
-    def getNumber(self, wordList):
-        if len(wordList[0]) > 1 and wordList[0][0] == '$' and wordList[0][1].isdigit():
-            number = int(wordList[0][1])
-            data = ' '.join(wordList[1:])
+    def getNumber(self, filehandle):
+        if len(filehandle) > 1 and filehandle[1].isdigit():
+            number = int(filehandle[1])
         else:
-            number = 1
-            data = ' '.join(wordList)
-        return (number, data)
+            number = 0
+        return number

@@ -9,18 +9,19 @@ from condition import conditionClass
 from action import actionClass
 
 
-def readBook(controlFileName, dataFileName):
+def readBook(controlFileName):
     # Create and link all our objects
+    logger = loggerClass()
     errorNotifier = errorNotifierClass()
     controller = controllerClass(logger, errorNotifier, controlFileName)
+    controller.dumpLogs()
     errorNotifier.setController(controller)
-    sourceHandler = sourceHandlerClass(logger, errorNotifier, dataFileName)
+    sourceHandler = sourceHandlerClass(logger, errorNotifier)
     conditionChecker = conditionClass(logger, errorNotifier)
     actionHandler = actionClass(logger, errorNotifier, sourceHandler, controller)
     conditionChecker.setHandlers(sourceHandler.setMatch, actionHandler.getLastResult)
     actionHandler.setHandlers(conditionChecker.getPreOrPostMatch)
 
-    sourceHandler.reset()
     newPass = False
     currentPass = controller.nextPass()  # Go to the first pass
     # Process this pass
@@ -28,9 +29,9 @@ def readBook(controlFileName, dataFileName):
         controller.setPass(currentPass)
         # Process any pre-pass actions
         while controller.nextLine():
-            condition, action, argument = controller.getLine()
+            condition, action, filehandle, argument = controller.getLine()
             if conditionChecker.check(condition, '^', ''):
-                actionHandler.doAction('', action, argument)
+                actionHandler.doAction('', action, filehandle, argument)
                 newPass = actionHandler.nextPass
         # For each line of input data
         while not(actionHandler.exitNow) and sourceHandler.nextLine():
@@ -39,16 +40,16 @@ def readBook(controlFileName, dataFileName):
             controller.reset()
             # For each line in the current pass of the control file
             while not(newPass) and controller.nextLine():
-                condition, action, argument = controller.getLine()
+                condition, action, filehandle, argument = controller.getLine()
                 if conditionChecker.check(condition, dataCount, dataLine):
-                    dataLine = actionHandler.doAction(dataLine, action, argument)
+                    dataLine = actionHandler.doAction(dataLine, action, filehandle, argument)
                     newPass = actionHandler.nextPass
         # Process any post-pass actions
         controller.reset()
         while controller.nextLine():
-            condition, action, argument = controller.getLine()
+            condition, action, filehandle, argument = controller.getLine()
             if conditionChecker.check(condition, '$', ''):
-                actionHandler.doAction('', action, argument)
+                actionHandler.doAction('', action, filehandle, argument)
                 newPass = actionHandler.nextPass
         if not(newPass):
             newPass = controller.nextPass()
@@ -58,11 +59,7 @@ def readBook(controlFileName, dataFileName):
 
 
 # Execution starts here
-if len(sys.argv) < 3:
-    print('Usage: ' + sys.argv[0] + ' control-file data-file {log-file}')
+if len(sys.argv) != 2:
+    print('Usage: ' + sys.argv[0] + ' control-file')
     exit()
-if len(sys.argv) > 3:
-    logger = loggerClass(sys.argv[3])
-else:
-    logger = loggerClass()
-readBook(sys.argv[1], sys.argv[2])
+readBook(sys.argv[1])

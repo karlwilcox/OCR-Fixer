@@ -1,15 +1,15 @@
 import re
 
-
 class controllerClass:
 
     def __init__(self, logger, errorNotifier, fileName):
+        self.localLog = []
+        self.logger = logger
         self.fileName = fileName
         self.controlLines = []
         self.passMap = []
         self.currentPass = -1
         self.currentLine = -1
-        self.logger = logger
         self.errorNotifier = errorNotifier
         controlFileLine = 0
         passIndex = 0
@@ -22,7 +22,7 @@ class controllerClass:
                 if line == '':
                     continue    # ignore empty lines
                 if line[0] == '[':
-                        passName = re.findall('\[(.*)\]', line)
+                        passName = re.findall(r'\[(.*)\]', line)
                         self.passMap.append({'name': passName[0],
                                              'start': len(self.controlLines)})
                         if passIndex > 0:
@@ -38,37 +38,52 @@ class controllerClass:
         except IOError:
             print('Control file not found\n')
             exit()
-        if logger.showLevel & logger.control:
+
+    def dumpLogs(self):
+        if self.logger.showLevel & self.logger.control:
             print(self.passMap)
             print(self.controlLines)
+            for entry, level in self.localLog:
+                self.logger.log(entry, level)
+
+    def localLogger(self, message, category):
+        self.localLog.append((message,category))
 
     def getParts(self, line):
         cond = ''
         act = ''
+        fh = ''
         arg = ''
 
-        state = 'start'
+        state = 'whitespace'
         prev = ''
+        nextState = 'start'
 
         i = 0
         while i < len(line):
+            # Read a character
             ch = line[i]
             if i < len(line) - 1:
                 nextCh = line[i + 1]
             else:
                 nextCh = ''
             i += 1
-            # Not else
+            # if comment marker, end
             if ch == '#':
                 break
+            # if escaped comment marker, remove escape and carry on testing
             if ch == '\\':
                 if nextCh == '#':
                     ch = nextCh
                     i += 1
-            # Not else
-            if state == 'start':
+            # If we are eating whitespace and find some, get another character, 
+            if state == 'whitespace':
                 if ch.isspace():
                     continue
+                else:  # But if not space,  change state and carry on testing
+                    state = nextState
+            # No else, as we may have changed state above
+            if state == 'start':
                 if ch == '/':
                     state = 'regex'
                 else:
@@ -76,29 +91,40 @@ class controllerClass:
                 cond += ch
             elif state == 'cond':
                 if ch.isspace():
-                    state = 'action'
+                    state = 'whitespace'
+                    nextState = 'action'
                 else:
                     cond += ch
             elif state == 'regex':  # might contain a space, so we need to look
                 if ch == '/' and prev != '\\':  # for unescaped slash
-                    state = 'spaces1'  # might be followed by spaces
+                    state = 'whitespace'  # might be followed by spaces
+                    nextState = 'action'
                 cond += ch
-            elif state == 'spaces1':
-                if ch.isspace():
-                    continue  # ignore initial whitespace
+            elif state == 'filehandle1':
+                if ch == '$':
+                    fh = ch
+                    state = 'filehandle2'
                 else:
-                    act = ch
-                    state = 'action'
+                    arg = ch
+                    state = 'arg'
+            elif state == 'filehandle2':
+                if ch.isspace():
+                    state = 'whitespace'
+                    nextState = 'arg'
+                else:
+                    fh += ch
             elif state == 'action':
                 if ch.isspace():
-                    state = 'arg'
+                    state = 'whitespace'
+                    nextState = 'filehandle1'
                 else:
                     act += ch
             elif state == 'arg':
                 arg += ch
             prev = ch
-        self.logger.log(cond + ' / ' + act + ' / ' + arg, self.logger.control)
-        return (cond, act, arg)
+        self.localLogger(cond + ' / ' + act + ' / ' + fh + ' / ' + arg, self.logger.control)
+        # print(cond + ' / ' + act + ' / ' + fh + ' / ' + arg + '\n')
+        return (cond, act, fh, arg)
 
     def setPass(self, index):
         self.currentPass = index

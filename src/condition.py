@@ -92,7 +92,7 @@ class conditionClass():
                                     retval = True
                                     break
                             except ValueError:
-                                self.errorNotifier('Non-digit found in line number list')
+                                self.errorNotifier.doError('Non-digit found in line number list')
                     else: # just a plain number
                         try:
                             exact = int(condition)

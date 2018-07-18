@@ -1,39 +1,57 @@
 # Boutell's heraldry Historical and popular
 # Test control script
 
-[preface]
+[PREFACE]
 
-^ set loglevel 128
+^ logfile log.txt
+& set loglevel 32
+& log hello world
+& source duke.txt
 & open $1 out/preface.html
-& log hello world!
 
 # Section limits
-1 goto 179
-180 h1 $1 PREFACE TO THE FIRST EDITION.
-301 h1 $1 PREFACE TO THE SECOND EDITION.
+1 h1 $1 PREFACE TO THE FIRST EDITION.
+& goto 122
 
-422 close $1
+232 h1 $1 PREFACE THE SECOND AND THIRD EDITIONS.
+& goto 246
+
+400 close $1
 & exit
 
-# page furniture
-182 ignore
-207 skip 2
-248,322,363 skip 5
-289 goto 300
+124 log at _datacount_ with _dataline_
 
-# Global spelling corrections
+# page furniture
+146,151 ignore
+192,268,309,349,390 skip 5
 
 # This section Spelling Corrections
-183,228 fix eraldiy eraldry
-190 del ^
-202 fix  bimes times 
-227 fix  Gk\) Go 
-212 fix  /' \" 
-214 fix  Ee Re 
-237 fix  fleo aeo 
-242 fix disB diae
-& fix modem modern
-374 fix XTX XIX
+158 fix Ke Re
+171 fix verj' very
+173 fix ^yitll with
+191 del - 
+197 fix tioii tion
+258 fix 1 I
+265 fix eiia era
+299 fix -- -
+300 fix ifl iff
+301,303 fix Eoyal Royal
+307 fix ti' tro
+315 fix LX.X LXX
+317 fix IjXX LXX
+321,340 del ^
+338 fix StOT STOT
+340 fix diy dry
+344 fix UT) up
+354 fix aud^the "and the"
+357 fix gi'aph graph
+357 fix leve lev&eactute;
+371 fix foim form
+372 fix ti- tr
+374 fix ouGH ough
+363 fix rix rin
+364 fix }' y
+376 fix "LIr. Pap " "Dr. Pap"
 
 # Everything else is paragraphs
 * para $1 _dataline_

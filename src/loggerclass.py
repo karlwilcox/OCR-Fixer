@@ -1,7 +1,6 @@
 
 
 class loggerClass():
-    fileHandle = None
     control = 1
     section = 2
     condition = 4
@@ -12,9 +11,11 @@ class loggerClass():
     user = 128
     always = -1
 
-    showLevel = 0
+    def __init__(self):
+        self.fileHandle = None
+        self.showLevel = 0
 
-    def __init__(self, outputFile=None):
+    def logfile(self, outputFile=None):
         if outputFile is not None:
             try:
                 self.fileHandle = open(outputFile, "w")

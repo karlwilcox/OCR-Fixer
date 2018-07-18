@@ -31,7 +31,7 @@ class actionClass():
     def getLastResult(self):
         return self.result
 
-    def doSub(self, expression, line):
+    def doSub(self, line, expression):
         # TODO need to search for \/ in string somehow..? Allow search for forward slash
         parts = re.search('(.)(?P<patt>.*?)\1(?P<repl>.*?)\1(?P<flag>.*)$',
                           expression)
@@ -54,16 +54,22 @@ class actionClass():
         self.logger.log(pattern + ' / ' + replacement + ' / ' + flagstring + ' ' + line, self.logger.action)
         return re.sub(pattern, replacement, line, flags=flags)
 
-    def doCorrect(self, line, words):
+    def doCorrect(self, line, argument):
+        words = self.argToWords(argument)
         if len(words) != 2:
             self.errorNotifier.doError("usage: correct original replacement")
             return line
         return line.replace(words[0], words[1])
 
+    def doDelete(self, line, argument):
+        words = self.argToWords(argument)
+        for word in words:
+            line = line.replace(word, '')
+        return line
 
-    def argToWords(self, arg):
+    def argToWords(self, arg, min = 1):
         '''split input into words, respecting quotation marks (& escapes).
-        Returns tuple of words'''
+        Returns tuple of words at least min words long'''
         words = []
         word = ''
         inQuotes = False
@@ -96,126 +102,133 @@ class actionClass():
             i += 1
         if word != '':
             words.append(word)
+        if len(words) < min:
+            words.append('')
         return tuple(words)
 
-    def doAction(self, line, action, argument):
+    def doAction(self, line, action, filehandle, argument):
         self.result = True  # Most actions always succeed, so set as default
         self.newPass = False
         retval = line
         if argument != "":
             # substitute variable, unless % characters are preceeded by backslash
             argument = self.variable.subAll(argument, line)
-            words = self.argToWords(argument)
-        else:
-            words = ['','']
+            # words = self.argToWords(argument)
+            # allWords = ' '.join(words)
+        # else:
+        #     words = ['','']
+        #     allWords = '';
         self.logger.log('> ' + action + ' ' + argument, self.logger.action)
         if action == 'next':
             self.newPass = self.controller.nextPass()
         elif action == 'section':
-            self.newPass = self.controller.namedPass(words[0])          # substituted
+            self.newPass = self.controller.namedPass(argument)          # substituted
         elif action == 'goto':
-            if self.sourceHandler.gotoLine(words[0]):
+            if self.sourceHandler.gotoLine(argument):
                 retval = None  # dataLine is invalid after goto
                 self.controller.ignoreRest()
         elif action == 'skip' or action == 'ignore':
-            if self.sourceHandler.skipLines(words[0]):
+            if self.sourceHandler.skipLines(argument):
                 retval = None  # dataLine is invalid after skip
                 self.controller.ignoreRest()
         elif action == 'quit' or action == 'exit':
             self.exitNow = True  # Force exit from outer loop
         elif action == 'search':
-            self.result = self.sourceHandler.findLine(words[0])
+            self.result = self.sourceHandler.findLine(argument)
             if self.result:
                 retval = None  # dataline is invalid after a successful search
         elif action == 'correct' or action == 'fix':
-            retval = self.doCorrect(line, words)
+            retval = self.doCorrect(line, argument)
         elif action == 'delete' or action == 'del':
-            retval = self.doCorrect(line, [words[0], ''])
+            retval = self.doDelete(line, argument)
         elif action == 'sub':
-            retval = self.doSub(words[0], line)
+            retval = self.doSub(line, argument)
         elif action == 'replace':
-            retval = argument  # NOTE, does not use words version
+            retval = argument  
         elif action == 'finish' or action == 'moveon':
             self.controller.ignoreRest()
         elif action == 'set':
-            self.variable.user('set', words[0], ' '.join(words[1:]))
+            self.variable.user('set', self.argToWords(argument, 2))
         elif action == 'counter':
-            self.variable.user('counter', words[0], ' '.join(words[1:]))
+            self.variable.user('counter', self.argToWords(argument, 2))
         elif action == 'unset':
-            for w in words:
-                self.variable.user('unset', w)
+            self.variable.user('unset',  self.argToWords(argument, 2))
         elif len(action) > 1 and action[0] == 'h' and action[1].isdigit():
-            self.html.heading(action[1], *self.fileWriter.getNumber(words))
+            self.html.heading(action[1], filehandle, argument)
         elif action == 'para':
-            self.html.para(*self.fileWriter.getNumber(words))
+            self.html.para( filehandle, argument)
         elif action == 'open':
-            self.fileWriter.openFile(*self.fileWriter.getNumber(words))
+            self.fileWriter.openFile( filehandle, argument)
         elif action == 'write':
-            self.fileWriter.writeFile(*self.fileWriter.getNumber(words))
+            self.fileWriter.writeFile( filehandle, argument)
         elif action == 'writeln':
-            self.fileWriter.writelnFile(*self.fileWriter.getNumber(words))
+            self.fileWriter.writelnFile( filehandle, argument)
         elif action == 'close':
-            self.fileWriter.closeFile(*self.fileWriter.getNumber(words))
+            self.fileWriter.closeFile( filehandle, argument)
         elif action == 'append':
-            self.sourceHandler.appendLine(argument)  # NOTE, does not use words
+            self.sourceHandler.appendLine(argument)  
         elif action == 'echo':
-            print(' '.join(words))
+            print(argument)
+        elif action == 'logfile':
+            self.logger.logfile(argument)
         elif action == 'log':
-            self.logger.log(' '.join(words),self.logger.user)
-        elif action == 'process':
-            if len(words):
-                self.logger.log('Calling process ' + words[0], self.logger.action)
-                if len(words) > 1:  # [0-9] name args...
-                    try:
-                        number = int(words[0])
-                        if len(words) > 2:
-                            args = words[2:]
-                        else:
-                            args = None
-                        self.processStore.addProcess(number, words[1], args)
-                    except ValueError:
-                        self.errorNotifier.doError('Expected process number')
-                else:
-                    self.errorNotifier.doError('Usage: process [0-9] name {arguments}')
-        elif action == 'stream':
-            if len(words):
-                self.logger.log('Calling process ' + words[0], self.logger.action)
-                if len(words) > 1:  # name, processes
-                    if not(words[0].islower()):
-                        self.errorNotifier.doError('Expected stream id (a-z)')
-                    else:
-                        args = words[1:]
-                        self.streamStore.addPipeline(words[0], args)
-                else:
-                    self.errorNotifier.doError('Usage: stream [a-z] [0-9]+')
-        elif action == 'sendto':
-            if len(words):
-                self.logger.log('Calling process ' + words[0], self.logger.action)
-                stream = words[0]
-                content = ''
-                if len(words) > 1:
-                    content = ' '.join(words[1:])
-                self.streamStore.runPipeline(stream, content)
-            else:
-                print ('stream id missing')
-        elif action == 'flush':
-            if len(words):
-                self.logger.log('Flushing stream ' + words[0], self.logger.action)
-                stream = words[0]
-                self.streamStore.flushPipeline(stream)
-            else:
-                print ('stream id missing')
-        elif action == 'filter':
-            if len(words):
-                self.logger.log('Calling process ' + words[0], self.logger.action)
-                if len(words) > 1:
-                    stream = words[0]
-                    content = words[1:]
-                    retval = self.streamStore.runPipeline(stream, ' '.join(content))
-                else:
-                    print ('content missing')
-            else:
-                print ('stream id missing')
+            self.logger.log(argument, self.logger.user)
+        elif action == 'source':
+            self.sourceHandler.openSource(argument)
+        # elif action == 'process':
+        #     if len(words):
+        #         self.logger.log('Calling process ' + words[0], self.logger.action)
+        #         if len(words) > 1:  # [0-9] name args...
+        #             try:
+        #                 number = int(words[0])
+        #                 if len(words) > 2:
+        #                     args = words[2:]
+        #                 else:
+        #                     args = None
+        #                 self.processStore.addProcess(number, words[1], args)
+        #             except ValueError:
+        #                 self.errorNotifier.doError('Expected process number')
+        #         else:
+        #             self.errorNotifier.doError('Usage: process [0-9] name {arguments}')
+        # elif action == 'stream':
+        #     if len(words):
+        #         self.logger.log('Calling process ' + words[0], self.logger.action)
+        #         if len(words) > 1:  # name, processes
+        #             if not(words[0].islower()):
+        #                 self.errorNotifier.doError('Expected stream id (a-z)')
+        #             else:
+        #                 args = words[1:]
+        #                 self.streamStore.addPipeline(words[0], args)
+        #         else:
+        #             self.errorNotifier.doError('Usage: stream [a-z] [0-9]+')
+        # elif action == 'sendto':
+        #     if len(words):
+        #         self.logger.log('Calling process ' + words[0], self.logger.action)
+        #         stream = words[0]
+        #         content = ''
+        #         if len(words) > 1:
+        #             content = ' '.join(words[1:])
+        #         self.streamStore.runPipeline(stream, content)
+        #     else:
+        #         print ('stream id missing')
+        # elif action == 'flush':
+        #     if len(words):
+        #         self.logger.log('Flushing stream ' + words[0], self.logger.action)
+        #         stream = words[0]
+        #         self.streamStore.flushPipeline(stream)
+        #     else:
+        #         print ('stream id missing')
+        # elif action == 'filter':
+        #     if len(words):
+        #         self.logger.log('Calling process ' + words[0], self.logger.action)
+        #         if len(words) > 1:
+        #             stream = words[0]
+        #             content = words[1:]
+        #             retval = self.streamStore.runPipeline(stream, ' '.join(content))
+        #         else:
+        #             print ('content missing')
+        #     else:
+        #         print ('stream id missing')  
         elif action == 'restart':
             if self.matchedPreOrPost():
                 self.logger.log('Calling restart', self.logger.section | self.logger.action)
