@@ -21,7 +21,7 @@ class actionClass():
         self.matchedPreOrPost = None
         self.processStore = processStoreClass(logger, errorNotifier)
         self.streamStore = pipelineStoreClass(logger, errorNotifier, self.processStore)
-        self.html = htmlTagsClass(self.logger, self.fileWriter, self.variable)
+        self.html = htmlTagsClass(logger, self.fileWriter, self.variable, errorNotifier)
         self.exitNow = False
         self.nextPass = False
 
@@ -108,7 +108,7 @@ class actionClass():
 
     def doAction(self, line, action, filehandle, argument, match):
         self.result = True  # Most actions always succeed, so set as default
-        self.newPass = False
+        self.nextPass = False
         retval = line
         if argument != "":
             # substitute variable, unless % characters are preceeded by backslash
@@ -120,9 +120,11 @@ class actionClass():
         #     allWords = '';
         self.logger.log('> ' + action + ' ' + argument, self.logger.action)
         if action == 'next':
-            self.newPass = self.controller.nextPass()
+            self.nextPass = self.controller.nextPass()
+            self.controller.ignoreRest()
         elif action == 'section':
-            self.newPass = self.controller.namedPass(argument)          # substituted
+            self.nextPass = self.controller.namedPass(argument)          # substituted
+            self.controller.ignoreRest()
         elif action == 'goto':
             if self.sourceHandler.gotoLine(argument):
                 retval = None  # dataLine is invalid after goto
@@ -155,8 +157,8 @@ class actionClass():
             self.variable.user('unset',  self.argToWords(argument, 2))
         elif len(action) > 1 and action[0] == 'h' and action[1].isdigit():
             self.html.heading(action[1], filehandle, argument)
-        # elif action == 'figure' or action == 'fig':
-        #     self.html.figure( filehandle, argument)
+        elif action == 'figure' or action == 'fig':
+            self.html.figure( filehandle, self.argToWords(argument))
         elif action == 'para':
             self.html.para( filehandle, argument)
         elif action == 'open':

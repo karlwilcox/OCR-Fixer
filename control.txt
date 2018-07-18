@@ -1,13 +1,18 @@
 # Boutell's heraldry Historical and popular
 # Test control script
 
+[INIT]
+
+# ^ logfile log.txt
+^ set loglevel 130
+& log Completed Initialisation
+& next
+
 [PREFACE]
 
-^ logfile log.txt
-& set loglevel 128
-& log hello world
-& source duke.txt
+^ source duke.txt
 & open $1 out/preface.html
+& log Processing Preface
 
 # Section limits
 1 write $1 <<< EOF
@@ -24,7 +29,7 @@ EOF
 & goto 246
 
 400 close $1
-& exit
+& next
 
 # page furniture
 147,151 ignore
@@ -61,3 +66,16 @@ EOF
 
 # Everything else is paragraphs
 * para $1 _dataline_
+
+[CHAPTER1]
+
+# same source, goto for being called separately
+
+^ open $1 out/chapter1.html
+& log Processing Chapter 1
+& goto 587
+
+591 h1 $1 _dataline_
+
+# Fixes for this section
+

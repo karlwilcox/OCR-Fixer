@@ -24,10 +24,11 @@ class addTagsClass(processSuperClass):
 
 class htmlTagsClass():
     """Docstring for htmlTagsClass"""
-    def __init__(self, logger, fileWriter, variables):
+    def __init__(self, logger, fileWriter, variables, errorNotifier):
         self.logger = logger
         self.fileWriter = fileWriter
         self.variables = variables
+        self.errorNotifier = errorNotifier
         self.commonAttrs = 'data-source-line="_datacount_" data-source-file="_datafile_"'
         self.subbedAttrs = ''
         self.paraStore = ''
@@ -53,6 +54,27 @@ class htmlTagsClass():
         if self.commonAttrs != '':
             retval = ' ' + self.variables.subAll(self.commonAttrs)
         return retval
+
+    def figure(self, fileHandle, words):
+        if len(words) < 1:
+            self.errorNotifier.doError(r'Usage: figure <filename> {caption}')
+            return False
+        imageFile = words[0]
+        extra = ''
+        caption = ''
+        altText = ' alt="%s" ' % imageFile
+        if len(words) > 1:
+            caption = words[1]
+            altText = ' alt="%s" ' % caption
+        if len(words) > 2:
+            extra = ' ' + words[2] + ' '
+        content = '<figure>\n<img src="%s" %s %s />\n' % (imageFile, altText, extra)
+        if caption:
+            content += '<figcaption>%s</figcaption>\n' % caption
+        content += '</figure>'
+        self.fileWriter.writeFile( fileHandle, content)
+
+
 
     def para(self, fileHandle, line):
         line = line.rstrip('\n ')

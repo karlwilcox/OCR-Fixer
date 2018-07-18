@@ -57,6 +57,7 @@ class controllerClass:
                 else:
                     self.controlLines.append((controlFileLine, (cond, act, fh, arg)))
             self.passMap[passIndex - 1]['end'] = len(self.controlLines) - 1
+            print(self.passMap)
         except IOError:
             print('Control file not found\n')
             exit()

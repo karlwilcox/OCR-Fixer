@@ -35,7 +35,7 @@ def readBook(controlFileName):
                 actionHandler.doAction('', action, filehandle, argument, match)
                 newPass = actionHandler.nextPass
         # For each line of input data
-        while not(actionHandler.exitNow) and sourceHandler.nextLine():
+        while not(newPass) and not(actionHandler.exitNow) and sourceHandler.nextLine():
             dataLine = sourceHandler.getLine()
             dataCount = sourceHandler.getLineNo()
             controller.reset()
