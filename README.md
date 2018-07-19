@@ -19,7 +19,7 @@ support for multiple output and special support for wrapping content in HTML tag
 extract of an OCR'd document: (Line no.s for guidance, not part of the document)
 
 ```
- 1.
+ 1. fi&gt;t^^i&lt;^JSI-X 
  2. HERALDIC BLAZON, NOMENCLATURE, LANGUAGE, AND LAW'S. 
  3.
  4. In Heraldrj', the term Blazon, or Blazoning, is applied 
@@ -41,7 +41,8 @@ extract of an OCR'd document: (Line no.s for guidance, not part of the document)
 ```
 When we apply the following OCR-Fixer script:
 ```
-2 h1 $1 _dataline_
+1 ignore
+2 h1 _dataline_
 & moveon
 
 4 fix drj' dry
